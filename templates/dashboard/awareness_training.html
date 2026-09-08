@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-graduation-cap"></i> Security Awareness Training</h1>
+<p class="subtitle">Learn, test, and track your progress</p>
+
+<div class="row g-3 mb-4">
+  {% set modules=[('phishing','Phishing Awareness','fa-fish'),('password','Password Security','fa-key'),
+                  ('social','Social Engineering','fa-user-secret'),('browsing','Safe Browsing','fa-globe')] %}
+  {% for key,name,icon in modules %}
+  <div class="col-md-6 col-lg-3"><div class="glass p-3 text-center h-100">
+    <div class="text-blue" style="font-size:1.8rem"><i class="fas {{ icon }}"></i></div>
+    <h6 class="mt-2">{{ name }}</h6>
+    <div class="progress my-2"><div class="progress-bar" style="width:{{ progress[key].score if key in progress else 0 }}%">
+      {{ progress[key].score if key in progress else 0 }}%</div></div>
+    <button class="btn-neon btn-sm" onclick='startModule("{{ key }}","{{ name }}")'><i class="fas fa-play"></i> Start</button>
+  </div></div>
+  {% endfor %}
+</div>
+
+<div class="glass p-3">
+  <h5 class="text-purple"><i class="fas fa-trophy"></i> Leaderboard</h5>
+  <table class="table"><thead><tr><th>#</th><th>User</th><th>Total Score</th></tr></thead><tbody>
+    {% for u,total in leaderboard %}<tr><td>{{ loop.index }}</td><td>{{ u }}</td><td class="text-green">{{ total }}</td></tr>
+    {% else %}<tr><td colspan="3" class="text-muted text-center">No scores yet.</td></tr>{% endfor %}
+  </tbody></table>
+</div>
+
+<!-- Module modal -->
+<div class="modal fade" id="moduleModal" tabindex="-1"><div class="modal-dialog modal-lg">
+  <div class="modal-content glass">
+    <div class="modal-header"><h5 id="modTitle" class="text-blue"></h5>
+      <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="modBody"></div>
+  </div>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Slide decks + quizzes for each module.
+const CONTENT={
+  phishing:{slides:["Phishing uses fake emails/sites to steal credentials.","Check sender addresses carefully.","Hover over links before clicking.","Never enter credentials from email links.","Report suspicious messages to IT."],
+    quiz:[["What is phishing?",["A fishing sport","Fraudulent credential theft","A firewall","A hash"],1],
+          ["Best action on a suspicious link?",["Click it","Hover & verify","Forward to friends","Ignore safety"],1],
+          ["Phishing often creates a sense of?",["Calm","Urgency","Boredom","Trust always"],1],
+          ["You should enter passwords from email links?",["Yes","No","Sometimes","Always"],1],
+          ["Report phishing to?",["No one","IT/Security","Social media","Delete only"],1]]},
+  password:{slides:["Use 16+ character unique passwords.","Prefer passphrases.","Enable MFA everywhere.","Never reuse passwords.","Use a password manager."],
+    quiz:[["Ideal min length?",["6","8","16+","4"],2],
+          ["MFA stands for?",["Multi-Factor Auth","Manual File Access","Mega Fast App","None"],0],
+          ["Reusing passwords is?",["Safe","Risky","Required","Smart"],1],
+          ["Best storage for passwords?",["Sticky note","Password manager","Browser txt","Email"],1],
+          ["Passphrases are?",["Weaker","Stronger & memorable","Useless","Same"],1]]},
+  social:{slides:["Social engineering manipulates people.","Attackers impersonate trusted figures.","Verify identities before sharing info.","Beware pretexting & baiting.","Never share OTPs."],
+    quiz:[["Social engineering targets?",["Servers","Humans","Routers","Disks"],1],
+          ["Pretexting is?",["Fake scenario to extract info","A hash","A port","A cert"],0],
+          ["Share OTP codes?",["Yes","Never","Sometimes","With callers"],1],
+          ["Verify identity by?",["Trusting voice","Callback official number","Email only","Never"],1],
+          ["Baiting uses?",["Free USB/offers","Firewalls","Patches","VPNs"],0]]},
+  browsing:{slides:["Always check for HTTPS.","Keep browser updated.","Avoid suspicious downloads.","Use ad/script blockers.","Verify URLs before login."],
+    quiz:[["Secure sites use?",["HTTP","HTTPS","FTP","Telnet"],1],
+          ["Outdated browsers are?",["Safe","Vulnerable","Faster","Best"],1],
+          ["Suspicious downloads?",["Open them","Avoid","Share","Trust"],1],
+          ["URL bar should be?",["Ignored","Verified","Hidden","Random"],1],
+          ["Script blockers help?",["Yes","No","Never","Harmful"],0]]}
+};
+let cur,curName,answers;
+function startModule(key,name){
+  cur=key;curName=name;answers=[];
+  document.getElementById("modTitle").textContent=name;
+  const c=CONTENT[key];
+  let html='<h6 class="text-green">Lesson Slides</h6>';
+  c.slides.forEach((s,i)=>html+=`<div class="flip mb-2" onclick="this.classList.toggle('flipped')"><div class="flip-inner">
+    <div class="flip-front glass"><b>Slide ${i+1}</b><p class="text-muted mt-2">Click to reveal</p></div>
+    <div class="flip-back glass"><p>${s}</p></div></div>`);
+  html+='<h6 class="text-blue mt-3">Quiz</h6><form id="quizForm">';
+  c.quiz.forEach((q,qi)=>{html+=`<div class="mb-2"><b>${qi+1}. ${q[0]}</b>`;
+    q[1].forEach((opt,oi)=>html+=`<div><label><input type="radio" name="q${qi}" value="${oi}"> ${opt}</label></div>`);
+    html+='</div>';});
+  html+='</form><button class="btn-neon" onclick="submitQuiz()">Submit Quiz</button><div id="quizRes" class="mt-2"></div>';
+  document.getElementById("modBody").innerHTML=html;
+  new bootstrap.Modal(document.getElementById("moduleModal")).show();
+}
+async function submitQuiz(){
+  const c=CONTENT[cur];let correct=0;
+  c.quiz.forEach((q,qi)=>{const sel=document.querySelector(`input[name=q${qi}]:checked`);
+    if(sel&&+sel.value===q[2])correct++;});
+  const score=Math.round(correct/c.quiz.length*100);
+  const r=await apiPost("/api/training-submit",{module:cur,score:score});
+  let msg=`<div class="alert alert-${score===100?'success':'info'}">Score: ${score}% (${correct}/${c.quiz.length})</div>`;
+  if(score===100)msg+=`<div class="glass p-4 text-center"><h4 class="text-green">🏆 Certificate of Completion</h4>
+    <p>This certifies that <b>{{ current_user.username }}</b> completed<br><b>${curName}</b> with a perfect score.</p>
+    <small class="text-muted">CyberShield AI · ${new Date().toLocaleDateString()}</small></div>`;
+  document.getElementById("quizRes").innerHTML=msg;
+  if(score===100)setTimeout(()=>location.reload(),3000);
+}
+</script>
+{% endblock %}

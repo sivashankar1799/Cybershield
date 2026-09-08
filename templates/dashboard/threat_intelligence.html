@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-satellite-dish"></i> Threat Intelligence Center</h1>
+<p class="subtitle">Live threat feed and analysis</p>
+
+<div class="ticker mb-3"><span>
+  {% for t in threats[:8] %}🚨 {{ t.threat_name }} ({{ t.severity }}) — {{ t.threat_type }} &nbsp;&nbsp;•&nbsp;&nbsp; {% endfor %}
+</span></div>
+
+<div class="glass p-3 mb-3 d-flex flex-wrap gap-2 align-items-center">
+  <input class="form-control" style="max-width:260px" id="tSearch" placeholder="Search…" oninput="filter()">
+  <select class="form-select" style="max-width:180px" id="tSev" onchange="filter()">
+    <option value="">All severities</option><option>Critical</option><option>High</option>
+    <option>Medium</option><option>Low</option></select>
+  <select class="form-select" style="max-width:180px" id="tType" onchange="filter()">
+    <option value="">All types</option>
+    {% for ty in threats|map(attribute='threat_type')|unique %}<option>{{ ty }}</option>{% endfor %}
+  </select>
+</div>
+
+<div class="row g-3" id="threatGrid">
+  {% for t in threats %}
+  <div class="col-md-6 col-lg-4 threat-card" data-name="{{ t.threat_name|lower }}" data-sev="{{ t.severity }}" data-type="{{ t.threat_type }}">
+    <div class="glass p-3 h-100">
+      <div class="d-flex justify-content-between">
+        <h6 class="mb-1">{{ t.threat_name }}</h6>
+        <span class="sev {{ {'Critical':'badge-crit','High':'badge-high','Medium':'badge-med','Low':'badge-low'}[t.severity] }}">{{ t.severity }}</span>
+      </div>
+      <small class="text-blue">{{ t.threat_type }}</small> ·
+      <small class="text-muted">{{ t.date.strftime('%Y-%m-%d') }}</small>
+      <p class="mt-2 mb-1" style="font-size:.85rem">{{ t.description }}</p>
+      <p class="mb-1" style="font-size:.8rem"><b>Affected:</b> {{ t.affected_systems }}</p>
+      <p class="mb-0 text-green" style="font-size:.8rem"><i class="fas fa-shield"></i> {{ t.recommendations }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function filter(){
+  const q=tSearch.value.toLowerCase(),s=tSev.value,t=tType.value;
+  document.querySelectorAll(".threat-card").forEach(c=>{
+    const ok=c.dataset.name.includes(q)&&(!s||c.dataset.sev===s)&&(!t||c.dataset.type===t);
+    c.style.display=ok?"block":"none";
+  });
+}
+</script>
+{% endblock %}

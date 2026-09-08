@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-gear"></i> Settings</h1>
+<p class="subtitle">Manage your profile and security</p>
+
+<div class="row g-3">
+  <div class="col-lg-6"><div class="glass p-4">
+    <h5 class="text-blue">Profile</h5>
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="profile">
+      <label>Username</label><input class="form-control mb-2" name="username" value="{{ current_user.username }}">
+      <label>Email</label><input class="form-control mb-2" value="{{ current_user.email }}" disabled>
+      <label>Avatar Color</label>
+      <input type="color" class="form-control form-control-color mb-3" name="avatar_color" value="{{ current_user.avatar_color }}">
+      <button class="btn-neon"><i class="fas fa-save"></i> Save Profile</button>
+    </form>
+  </div></div>
+  <div class="col-lg-6"><div class="glass p-4">
+    <h5 class="text-green">Change Password</h5>
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="password">
+      <label>Current Password</label><input type="password" class="form-control mb-2" name="current_password" required>
+      <label>New Password</label><input type="password" class="form-control mb-3" name="new_password" required>
+      <button class="btn-neon"><i class="fas fa-key"></i> Update Password</button>
+    </form>
+  </div></div>
+  <div class="col-12"><div class="glass p-4">
+    <h5 class="text-purple">Account Info</h5>
+    <p class="mb-1"><b>Member since:</b> {{ current_user.created_at.strftime('%Y-%m-%d') }}</p>
+    <p class="mb-1"><b>Session timeout:</b> 30 minutes of inactivity</p>
+    <p class="mb-0"><b>CSRF protection:</b> <span class="text-green">Enabled</span></p>
+  </div></div>
+</div>
+{% endblock %}

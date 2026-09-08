@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-lock"></i> Encryption & Decryption Lab</h1>
+<p class="subtitle">AES-256, RSA-2048, Base64, and hashing — all server-computed</p>
+
+<div class="row g-3">
+  <div class="col-lg-7"><div class="glass p-4">
+    <div class="row g-2 mb-2">
+      <div class="col-6"><label>Algorithm</label>
+        <select class="form-select" id="algo" onchange="toggleKey()">
+          <option value="aes">AES-256-CBC</option>
+          <option value="base64">Base64</option>
+          <option value="sha256">SHA-256</option>
+          <option value="sha512">SHA-512</option>
+          <option value="md5">MD5</option>
+        </select></div>
+      <div class="col-6"><label>Mode</label>
+        <select class="form-select" id="mode">
+          <option value="encrypt">Encrypt / Encode / Hash</option>
+          <option value="decrypt">Decrypt / Decode</option>
+        </select></div>
+    </div>
+    <div class="mb-2" id="keyRow"><label>Key / Passphrase (AES)</label>
+      <input class="form-control" id="key" placeholder="Secret key"></div>
+    <label>Input Text</label>
+    <textarea class="form-control mb-2" id="inText" rows="4"></textarea>
+    <button class="btn-neon" onclick="runCrypto()"><i class="fas fa-gears"></i> Process</button>
+    <div class="mt-3"><label>Result <small class="text-muted" id="timing"></small></label>
+      <div class="code-out" id="cryptoOut" onclick="copyText(this.textContent)">—</div></div>
+    <div id="algoInfo" class="mt-2" style="font-size:.82rem;color:var(--muted)"></div>
+  </div></div>
+
+  <div class="col-lg-5"><div class="glass p-4">
+    <h5 class="text-purple">RSA-2048</h5>
+    <button class="btn-outline-neon mb-2" onclick="genRSA()"><i class="fas fa-key"></i> Generate Keypair</button>
+    <label>Public Key</label><textarea class="form-control mb-2" id="rsaPub" rows="3"></textarea>
+    <label>Private Key</label><textarea class="form-control mb-2" id="rsaPriv" rows="3"></textarea>
+    <label>Text / Ciphertext</label><textarea class="form-control mb-2" id="rsaText" rows="2"></textarea>
+    <div class="d-flex gap-2">
+      <button class="btn-neon" onclick="rsaOp('encrypt')">Encrypt</button>
+      <button class="btn-outline-neon" onclick="rsaOp('decrypt')">Decrypt</button>
+    </div>
+    <div class="code-out mt-2" id="rsaOut" onclick="copyText(this.textContent)">—</div>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleKey(){document.getElementById("keyRow").style.display=algo.value==="aes"?"block":"none";}
+async function runCrypto(){
+  const r=await apiPost("/api/encrypt",{algorithm:algo.value,mode:mode.value,text:inText.value,key:key.value});
+  if(r.success){cryptoOut.textContent=r.result;timing.textContent="("+r.time_ms+" ms)";
+    algoInfo.textContent=JSON.stringify(r.info);}
+  else{cryptoOut.textContent="Error: "+r.error;timing.textContent="";}
+}
+async function genRSA(){
+  const r=await apiPost("/api/rsa-generate",{});
+  if(r.success){rsaPub.value=r.public;rsaPriv.value=r.private;toast("RSA keypair generated");}
+}
+async function rsaOp(m){
+  const key=m==="encrypt"?rsaPub.value:rsaPriv.value;
+  const r=await apiPost("/api/rsa",{mode:m,text:rsaText.value,key:key});
+  rsaOut.textContent=r.success?r.result+"  ("+r.time_ms+" ms)":"Error: "+r.error;
+}
+</script>
+{% endblock %}

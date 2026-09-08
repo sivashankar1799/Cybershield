@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block auth_content %}
+<div class="auth-wrap">
+  <div class="auth-card glass">
+    <div class="brand-big"><i class="fas fa-shield-halved"></i> CyberShield AI</div>
+    <h2 class="text-green">Register</h2>
+    <p class="subtitle text-center">Create your secure account</p>
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3"><label>Username</label><input class="form-control" name="username" required></div>
+      <div class="mb-3"><label>Email</label><input type="email" class="form-control" name="email" required></div>
+      <div class="mb-3"><label>Password (6+ chars)</label><input type="password" class="form-control" name="password" required></div>
+      <button class="btn-neon w-100 mb-3"><i class="fas fa-user-plus"></i> Create Account</button>
+    </form>
+    <p class="text-center"><a href="{{ url_for('login') }}">Already have an account? Sign in</a></p>
+  </div>
+</div>
+{% endblock %}

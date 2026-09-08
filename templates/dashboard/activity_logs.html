@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-clipboard-list"></i> Activity Logs</h1>
+<p class="subtitle">Full audit trail</p>
+
+<div class="glass p-3 mb-3">
+  <form class="row g-2 align-items-end" method="GET">
+    <div class="col-md-5"><label>Search details</label>
+      <input class="form-control" name="q" value="{{ q }}"></div>
+    <div class="col-md-4"><label>Action type</label>
+      <select class="form-select" name="action">
+        <option value="">All</option>
+        {% for a in action_types %}<option {{ 'selected' if a==action else '' }}>{{ a }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-3 d-flex gap-2">
+      <button class="btn-neon w-100">Filter</button></div>
+  </form>
+  <div class="d-flex gap-2 mt-2">
+    <a class="btn-outline-neon btn-sm" href="{{ url_for('api_export', fmt='csv') }}">CSV</a>
+    <a class="btn-outline-neon btn-sm" href="{{ url_for('api_export', fmt='json') }}">JSON</a>
+    <a class="btn-outline-neon btn-sm" href="{{ url_for('api_report', report_type='scan') }}">PDF</a>
+  </div>
+</div>
+
+<div class="glass p-3">
+  <table class="table"><thead><tr><th>Time</th><th>Action</th><th>Details</th><th>IP</th></tr></thead><tbody>
+    {% for l in logs.items %}
+    <tr><td>{{ l.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td><span class="sev badge-low">{{ l.action_type }}</span></td>
+      <td>{{ l.details }}</td><td class="text-muted">{{ l.ip_address }}</td></tr>
+    {% else %}<tr><td colspan="4" class="text-center text-muted">No logs.</td></tr>{% endfor %}
+  </tbody></table>
+  <nav class="d-flex justify-content-center"><ul class="pagination">
+    {% if logs.has_prev %}<li class="page-item"><a class="page-link" href="?page={{ logs.prev_num }}&q={{ q }}&action={{ action }}">«</a></li>{% endif %}
+    <li class="page-item active"><span class="page-link">{{ logs.page }} / {{ logs.pages or 1 }}</span></li>
+    {% if logs.has_next %}<li class="page-item"><a class="page-link" href="?page={{ logs.next_num }}&q={{ q }}&action={{ action }}">»</a></li>{% endif %}
+  </ul></nav>
+</div>
+{% endblock %}
