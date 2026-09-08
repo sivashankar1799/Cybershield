@@ -8,3 +8,4 @@ instance/*.sqlite
 instance/*.sqlite3
 instance/uploads/*
 !instance/uploads/.gitkeep
+cybershield_backup.sql
