@@ -21,10 +21,21 @@ class Config:
 
     # --- Database ---
     # Set DATABASE_URL in production, e.g. mysql+pymysql://user:password@host/cybershield
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", "mysql+pymysql://root:@localhost/cybershield"
-    )
+    DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "mysql+pymysql://root:@localhost/cybershield"
+)
+
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+# Aiven MySQL requires an encrypted TLS connection
+    if "aivencloud.com" in DATABASE_URL:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {
+            "ssl": {}
+        }
+    }
 
     # --- SMTP / password reset email ---
     # Gmail: smtp.gmail.com:587 + a Google App Password (not the account password).
