@@ -17,44 +17,38 @@ class Config:
 
     # --- Security ---
     # Used to sign session cookies and CSRF tokens. Override in production!
-    SECRET_KEY = os.environ.get("SECRET_KEY", "cybershield-dev-secret-change-me-9f3a2b")
+    SECRET_KEY = os.environ.get(
+        "SECRET_KEY",
+        "cybershield-dev-secret-change-me-9f3a2b"
+    )
 
     # --- Database ---
-    # Set DATABASE_URL in production, e.g. mysql+pymysql://user:password@host/cybershield
-    DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "mysql+pymysql://root:@localhost/cybershield"
-)
+    # Use Railway MySQL in production, local MySQL as fallback.
+    database_url = os.environ.get("MYSQL_URL")
 
-    SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    if database_url and database_url.startswith("mysql://"):
+        database_url = database_url.replace(
+            "mysql://",
+            "mysql+pymysql://",
+            1
+        )
+
+    SQLALCHEMY_DATABASE_URI = (
+        database_url
+        or "mysql+pymysql://root:@localhost/cybershield"
+    )
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-# Aiven MySQL requires an encrypted TLS connection
-    if "aivencloud.com" in DATABASE_URL:
-        SQLALCHEMY_ENGINE_OPTIONS = {
-        "connect_args": {
-            "ssl": {}
-        }
-    }
-
-    # --- SMTP / password reset email ---
-    # Gmail: smtp.gmail.com:587 + a Google App Password (not the account password).
-    MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
-    MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
-    MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
-    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "")
-    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() == "true"
-
     # --- Session / Login ---
-    # Auto-logout after 30 minutes of inactivity (requirement #14).
+    # Auto-logout after 30 minutes of inactivity
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)
     SESSION_REFRESH_EACH_REQUEST = True
 
     # --- CSRF (Flask-WTF) ---
     WTF_CSRF_ENABLED = True
-    WTF_CSRF_TIME_LIMIT = None  # token valid for the life of the session
+    WTF_CSRF_TIME_LIMIT = None
 
     # --- Uploads ---
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max upload
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "instance", "uploads")
