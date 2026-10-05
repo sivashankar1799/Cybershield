@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-network-wired"></i> Network Scanner</h1>
+<p class="subtitle">TCP port scan via Python socket + thread pool</p>
+
+<div class="glass p-4 mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-8"><label>Target host / IP</label>
+      <input class="form-control" id="target" value="127.0.0.1"></div>
+    <div class="col-md-4 d-flex gap-2">
+      <button class="btn-neon w-100" onclick="scan()"><i class="fas fa-magnifying-glass"></i> Scan</button>
+    </div>
+  </div>
+  <div class="scan-bar mt-3"><div id="progress"></div></div>
+</div>
+
+<div class="glass p-4">
+  <div class="d-flex justify-content-between mb-2">
+    <h5 class="text-blue mb-0">Results <span id="ipInfo" class="text-muted"></span></h5>
+    <div class="d-flex gap-2">
+      <button class="btn-outline-neon btn-sm" onclick="exportData('csv')">CSV</button>
+      <button class="btn-outline-neon btn-sm" onclick="exportData('json')">JSON</button>
+    </div>
+  </div>
+  <table class="table"><thead><tr><th>IP</th><th>Port</th><th>Service</th><th>Status</th><th>Risk</th></tr></thead>
+    <tbody id="results"><tr><td colspan="5" class="text-muted text-center">No scan yet.</td></tr></tbody></table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let lastResults=[];
+async function scan(){
+  const p=document.getElementById("progress"); p.style.width="20%";
+  results.innerHTML='<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin text-blue"></i> Scanning…</td></tr>';
+  const r=await apiPost("/api/network-scan",{target:target.value});
+  p.style.width="100%"; setTimeout(()=>p.style.width="0",800);
+  if(!r.success){results.innerHTML='<tr><td colspan="5" class="text-danger">'+r.error+'</td></tr>';return;}
+  ipInfo.textContent="("+r.ip+")"; lastResults=r.results;
+  const open=r.results.filter(x=>x.status==="open");
+  const show=open.length?open:r.results;
+  results.innerHTML=show.map(x=>`<tr>
+    <td>${x.ip}</td><td>${x.port}</td><td>${x.service}</td>
+    <td><span class="sev ${x.status==='open'?'badge-safe':'badge-info'}">${x.status}</span></td>
+    <td><span class="sev ${sevClass(x.risk)}">${x.risk}</span></td></tr>`).join("")
+    || '<tr><td colspan="5" class="text-center text-muted">No open ports found.</td></tr>';
+}
+function exportData(fmt){
+  if(!lastResults.length){toast("Run a scan first","#ff3860");return;}
+  let blob;
+  if(fmt==="json"){blob=new Blob([JSON.stringify(lastResults,null,2)],{type:"application/json"});}
+  else{const h="IP,Port,Service,Status,Risk\n"+lastResults.map(x=>`${x.ip},${x.port},${x.service},${x.status},${x.risk}`).join("\n");
+    blob=new Blob([h],{type:"text/csv"});}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="scan."+fmt;a.click();
+}
+</script>
+{% endblock %}

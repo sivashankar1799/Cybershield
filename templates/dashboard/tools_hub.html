@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-toolbox"></i> Security Tools Hub</h1>
+<p class="subtitle">A suite of working utilities</p>
+
+<div class="row g-3">
+  <!-- Base64 -->
+  <div class="col-lg-6"><div class="glass p-3">
+    <h6 class="text-blue">Base64 Encoder/Decoder</h6>
+    <textarea class="form-control mb-2" id="b64in" rows="2"></textarea>
+    <div class="d-flex gap-2 mb-2"><button class="btn-neon btn-sm" onclick="b64('encode')">Encode</button>
+      <button class="btn-outline-neon btn-sm" onclick="b64('decode')">Decode</button></div>
+    <div class="code-out" id="b64out" onclick="copyText(this.textContent)">—</div>
+  </div></div>
+
+  <!-- URL -->
+  <div class="col-lg-6"><div class="glass p-3">
+    <h6 class="text-green">URL Encoder/Decoder</h6>
+    <textarea class="form-control mb-2" id="urlin" rows="2"></textarea>
+    <div class="d-flex gap-2 mb-2"><button class="btn-neon btn-sm" onclick="urlt('encode')">Encode</button>
+      <button class="btn-outline-neon btn-sm" onclick="urlt('decode')">Decode</button></div>
+    <div class="code-out" id="urlout" onclick="copyText(this.textContent)">—</div>
+  </div></div>
+
+  <!-- QR Generator -->
+  <div class="col-lg-6"><div class="glass p-3 text-center">
+    <h6 class="text-purple">QR Code Generator</h6>
+    <input class="form-control mb-2" id="qrtext" placeholder="Text or URL">
+    <button class="btn-neon btn-sm mb-2" onclick="genQR()">Generate</button>
+    <div id="qrout"></div>
+  </div></div>
+
+  <!-- QR Scanner -->
+  <div class="col-lg-6"><div class="glass p-3 text-center">
+    <h6 class="text-blue">QR Code Scanner</h6>
+    <input type="file" accept="image/*" class="form-control mb-2" id="qrfile" onchange="scanQR()">
+    <div class="code-out" id="qrresult">Upload a QR image…</div>
+  </div></div>
+
+  <!-- DNS -->
+  <div class="col-lg-4"><div class="glass p-3">
+    <h6 class="text-green">DNS Lookup</h6>
+    <input class="form-control mb-2" id="dnshost" placeholder="example.com">
+    <button class="btn-neon btn-sm mb-2" onclick="dns()">Lookup</button>
+    <div class="code-out" id="dnsout">—</div>
+  </div></div>
+
+  <!-- WHOIS -->
+  <div class="col-lg-4"><div class="glass p-3">
+    <h6 class="text-purple">WHOIS Lookup</h6>
+    <input class="form-control mb-2" id="whoisd" placeholder="example.com">
+    <button class="btn-neon btn-sm mb-2" onclick="whois()">Lookup</button>
+    <div class="code-out" id="whoisout">—</div>
+  </div></div>
+
+  <!-- GeoIP -->
+  <div class="col-lg-4"><div class="glass p-3">
+    <h6 class="text-blue">IP Geolocation</h6>
+    <input class="form-control mb-2" id="geoip" placeholder="8.8.8.8">
+    <button class="btn-neon btn-sm mb-2" onclick="geo()">Locate</button>
+    <div class="code-out" id="geoout">—</div>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function b64(m){const r=await apiPost("/api/tool/base64",{text:b64in.value,mode:m});b64out.textContent=r.success?r.result:r.error;}
+async function urlt(m){const r=await apiPost("/api/tool/url",{text:urlin.value,mode:m});urlout.textContent=r.success?r.result:r.error;}
+async function genQR(){const r=await apiPost("/api/tool/qrcode",{content:qrtext.value});
+  qrout.innerHTML=r.success?`<img src="${r.image}" class="mt-2" width="200">`:r.error;}
+async function dns(){const r=await apiPost("/api/tool/dns",{host:dnshost.value});dnsout.textContent=r.success?r.ips.join("\n"):r.error;}
+async function whois(){const r=await apiPost("/api/tool/whois",{domain:whoisd.value});whoisout.textContent=r.success?JSON.stringify(r.result,null,2):r.error;}
+async function geo(){const r=await apiPost("/api/tool/geoip",{ip:geoip.value});geoout.textContent=r.success?JSON.stringify(r.result,null,2):r.error;}
+function scanQR(){
+  const f=document.getElementById("qrfile").files[0];if(!f)return;
+  const img=new Image();img.onload=()=>{
+    const cv=document.createElement("canvas");cv.width=img.width;cv.height=img.height;
+    const cx=cv.getContext("2d");cx.drawImage(img,0,0);
+    const data=cx.getImageData(0,0,cv.width,cv.height);
+    const code=jsQR(data.data,cv.width,cv.height);
+    qrresult.textContent=code?code.data:"No QR code detected.";
+  };img.src=URL.createObjectURL(f);
+}
+</script>
+{% endblock %}

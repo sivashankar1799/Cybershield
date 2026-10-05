@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-gauge-high"></i> Security Overview</h1>
+<p class="subtitle">Real-time posture of your environment</p>
+
+<div class="row g-3 mb-4">
+  {% set cards = [
+    ('Security Score', stats.security_score ~ '%', 'fa-shield-halved', 'text-green'),
+    ('Active Threats', stats.active_threats, 'fa-triangle-exclamation', 'text-danger2'),
+    ('Vulnerabilities', stats.vulnerabilities, 'fa-bug', 'text-warn'),
+    ('Password Health', stats.password_health ~ '%', 'fa-key', 'text-blue'),
+    ('Firewall', stats.firewall, 'fa-fire', 'text-green'),
+    ('Encryption', stats.encryption, 'fa-lock', 'text-purple') ] %}
+  {% for label,val,icon,cls in cards %}
+  <div class="col-6 col-lg-2">
+    <div class="glass stat-card h-100">
+      <div class="icon {{ cls }}"><i class="fas {{ icon }}"></i></div>
+      <div class="value {{ cls }}">{{ val }}</div>
+      <div class="label">{{ label }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5"><div class="glass p-3 h-100">
+    <h5 class="text-blue"><i class="fas fa-chart-pie"></i> Threat Categories</h5>
+    <div class="dashboard-chart dashboard-chart-pie"><canvas id="pieChart"></canvas></div></div></div>
+  <div class="col-lg-4"><div class="glass p-3 h-100 text-center">
+    <h5 class="text-green"><i class="fas fa-gauge"></i> Risk Score</h5>
+    <div class="gauge-wrap dashboard-chart dashboard-chart-gauge"><canvas id="gaugeChart"></canvas>
+      <div class="gauge-val text-green" id="gaugeVal">--</div></div></div></div>
+  <div class="col-lg-3"><div class="glass p-3 h-100">
+    <h5 class="text-purple"><i class="fas fa-shield"></i> Status</h5>
+    <ul class="list-unstyled" style="font-size:.9rem">
+      <li class="mb-2"><i class="fas fa-circle text-green"></i> Firewall: Active</li>
+      <li class="mb-2"><i class="fas fa-circle text-green"></i> AES-256 Enabled</li>
+      <li class="mb-2"><i class="fas fa-circle text-blue"></i> Real-time Monitoring</li>
+      <li class="mb-2"><i class="fas fa-circle text-warn"></i> {{ stats.vulnerabilities }} Open Issues</li>
+    </ul></div></div>
+</div>
+
+<div class="glass p-3 mt-3">
+  <div class="d-flex justify-content-between align-items-center">
+    <h5 class="text-blue mb-0"><i class="fas fa-chart-line"></i> 30-Day Threat Trends</h5>
+    <span class="live-indicator"><i class="fas fa-circle"></i> <span id="liveStatus">Connecting…</span></span>
+  </div>
+  <div class="dashboard-chart dashboard-chart-line"><canvas id="lineChart"></canvas></div>
+</div>
+
+<div class="glass p-3 mt-3 mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="text-blue mb-0"><i class="fas fa-bolt"></i> Live Security Feed</h5>
+    <small class="text-muted">Server-Sent Events · MySQL</small>
+  </div>
+  <div id="liveFeed" class="live-feed">
+    <div class="live-empty">Waiting for security activity…</div>
+  </div>
+</div>
+{% endblock %}

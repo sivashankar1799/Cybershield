@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-fish"></i> Phishing URL Detector</h1>
+<p class="subtitle">Heuristic analysis of suspicious URL patterns</p>
+
+<div class="glass p-4 mb-3">
+  <label>URL to analyze</label>
+  <div class="d-flex gap-2">
+    <input class="form-control" id="pUrl" placeholder="http://secure-login-bank.tk/verify">
+    <button class="btn-neon" onclick="pcheck()"><i class="fas fa-magnifying-glass"></i> Analyze</button>
+  </div>
+</div>
+
+<div class="row g-3" id="pResult" style="display:none">
+  <div class="col-md-6"><div class="glass p-3 text-center">
+    <h6 class="text-green">Safe Score</h6>
+    <div class="gauge-wrap"><canvas id="safeGauge" height="160"></canvas><div class="gauge-val text-green" id="safeVal"></div></div>
+  </div></div>
+  <div class="col-md-6"><div class="glass p-3 text-center">
+    <h6 class="text-danger2">Threat Score</h6>
+    <div class="gauge-wrap"><canvas id="threatGauge" height="160"></canvas><div class="gauge-val text-danger2" id="threatVal"></div></div>
+  </div></div>
+  <div class="col-12"><div class="glass p-3">
+    <h5 id="verdict"></h5>
+    <table class="table"><thead><tr><th>Check</th><th>Result</th><th>Detail</th></tr></thead>
+      <tbody id="checks"></tbody></table>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let sg,tg;
+async function pcheck(){
+  const r=await apiPost("/api/phishing-check",{url:pUrl.value});
+  if(!r.success){toast(r.error,"#ff3860");return;}
+  document.getElementById("pResult").style.display="flex";
+  drawG("safeGauge",r.safe_score,"#00ff88",s=>sg=s,sg);
+  drawG("threatGauge",r.threat_score,"#ff3860",s=>tg=s,tg);
+  safeVal.textContent=r.safe_score; threatVal.textContent=r.threat_score;
+  verdict.innerHTML=`Verdict: <span class="sev ${r.verdict==='Dangerous'?'badge-crit':r.verdict==='Suspicious'?'badge-med':'badge-safe'}">${r.verdict}</span> — ${r.host}`;
+  checks.innerHTML=r.checks.map(c=>`<tr><td>${c.name}</td>
+    <td><i class="fas fa-${c.flagged?'triangle-exclamation text-danger2':'check text-green'}"></i></td>
+    <td class="text-muted">${c.detail||'-'}</td></tr>`).join("");
+}
+function drawG(id,val,col,store,old){
+  if(old)old.destroy();
+  const ch=new Chart(document.getElementById(id),{type:"doughnut",
+    data:{datasets:[{data:[val,100-val],backgroundColor:[col,"rgba(255,255,255,.06)"],borderWidth:0,circumference:180,rotation:270}]},
+    options:{cutout:"72%",plugins:{legend:{display:false}}}});
+  store(ch);
+}
+</script>
+{% endblock %}

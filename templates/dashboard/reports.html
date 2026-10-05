@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><i class="fas fa-file-pdf"></i> Reports Center</h1>
+<p class="subtitle">Generate branded PDF & CSV reports</p>
+
+<div class="row g-3">
+  {% set reports=[('overview','Security Overview','fa-gauge-high','text-green'),
+                  ('vulnerability','Vulnerability Assessment','fa-bug','text-warn'),
+                  ('scan','Scan Results / Activity','fa-magnifying-glass','text-blue')] %}
+  {% for key,name,icon,cls in reports %}
+  <div class="col-md-4"><div class="glass p-4 text-center h-100">
+    <div class="{{ cls }}" style="font-size:2rem"><i class="fas {{ icon }}"></i></div>
+    <h6 class="mt-2">{{ name }}</h6>
+    <a class="btn-neon btn-sm mt-2" href="{{ url_for('api_report', report_type=key) }}">
+      <i class="fas fa-download"></i> Download PDF</a>
+  </div></div>
+  {% endfor %}
+  <div class="col-12"><div class="glass p-4">
+    <h5 class="text-purple">Raw Data Exports</h5>
+    <a class="btn-outline-neon" href="{{ url_for('api_export', fmt='csv') }}"><i class="fas fa-file-csv"></i> Activity CSV</a>
+    <a class="btn-outline-neon" href="{{ url_for('api_export', fmt='json') }}"><i class="fas fa-file-code"></i> Activity JSON</a>
+  </div></div>
+</div>
+{% endblock %}
